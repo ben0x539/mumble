@@ -2030,7 +2030,7 @@ void MainWindow::logUsers() {
 	QDateTime now = QDateTime::currentDateTimeUtc();
 	QString filename = filenamePattern.arg(now.toString(timeFormat));
 	QFile file(filename);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+	if (!file.open(QIODevice::WriteOnly)) {
 		g.l->log(Log::Warning, tr("Could not open file for writing: %1").arg(filename));
 		qaLogUsersToggle->setChecked(false);
 		return;
