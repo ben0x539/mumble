@@ -1991,15 +1991,6 @@ void MainWindow::on_LogUsers_timeout() {
 	logUsers();
 }
 
-namespace {
-	struct Rec {
-		int depth;
-		const Channel* channel;
-
-		Rec(int d, Channel* c) : depth(d), channel(c) {}
-	};
-}
-
 void MainWindow::on_qaLogUsersToggle_triggered() {
 	if (qaLogUsersToggle->isChecked()) {
 		logUsers();
@@ -2009,11 +2000,20 @@ void MainWindow::on_qaLogUsersToggle_triggered() {
 	}
 }
 
-struct CompareChannelPosition {
-	bool operator()(Channel* lhs, Channel* rhs) {
-		return Channel::lessThan(lhs, rhs);
-	}
-};
+namespace {
+	struct Rec {
+		int depth;
+		Channel* channel;
+
+		Rec(int d, Channel* c) : depth(d), channel(c) {}
+	};
+
+	struct CompareChannelPosition {
+		bool operator()(Channel* lhs, Channel* rhs) {
+			return Channel::lessThan(lhs, rhs);
+		}
+	};
+}
 
 void MainWindow::logUsers() {
 	const static QString format = QString::fromUtf8("'mumble-user-log-'yyyyMMdd-HHmmss'.txt'");
@@ -2038,14 +2038,19 @@ void MainWindow::logUsers() {
 	while (!stack.empty()) {
 		Rec top = stack.top();
 		stack.pop();
-		const Channel& ch = *top.channel;
+		Channel& ch = *top.channel;
+		int depth = top.depth + 2;
 
 		for (int j = 0; j < top.depth; ++j) stream << ' ';
-		stream << ch.qsName << ":\n";
-		int depth = top.depth + 2;
+		stream << "# " << ch.qsName;
+		QHash<Channel*, ModelItem*>::iterator model_item_iter = ModelItem::c_qhChannels.find(&ch);
+		if (model_item_iter != ModelItem::c_qhChannels.end())
+			stream << " (" << (*model_item_iter)->iUsers << ")";
+		stream << ":\r\n";
+
 		for (QList<User*>::const_iterator i = ch.qlUsers.constBegin(); i != ch.qlUsers.constEnd(); ++i) {
 			for (int j = 0; j < depth; ++j) stream << ' ';
-			stream << "- " << (*i)->qsName << '\n';
+			stream << "* " << (*i)->qsName << "\r\n";
 		}
 
 		children.insert(ch.qlChannels.constBegin(), ch.qlChannels.constEnd());
