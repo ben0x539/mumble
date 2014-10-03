@@ -29,6 +29,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stack>
+
 #include "mumble_pch.hpp"
 
 #include "MainWindow.h"
@@ -1975,6 +1977,42 @@ void MainWindow::on_qaFilterToggle_triggered() {
 
 	UserModel *um = static_cast<UserModel *>(qtvUsers->model());
 	um->toggleChannelFiltered(NULL); // force a UI refresh
+}
+
+namespace {
+	struct Rec {
+		int depth;
+		const Channel* channel;
+
+		Rec(int d, Channel* c) : depth(d), channel(c) {}
+	};
+}
+
+void MainWindow::on_qaLogUsersToggle_triggered() {
+	bool active = qaLogUsersToggle->isChecked();
+
+	std::stack<Rec> stack;
+	stack.push(Rec(0, mapChannel(SHORTCUT_TARGET_ROOT)));
+
+	while (!stack.empty()) {
+		Rec top = stack.top();
+		const Channel& ch = *top.channel;
+		stack.pop();
+
+		for (int j = 0; j < top.depth; ++j) std::cout << ' ';
+		std::cout << ch.qsName.toStdString() << ":\n";
+		int depth = top.depth + 2;
+		for (QList<User*>::const_iterator i = ch.qlUsers.constBegin(); i != ch.qlUsers.constEnd(); ++i) {
+			for (int j = 0; j < depth; ++j) std::cout << ' ';
+			std::cout << "- " << (*i)->qsName.toStdString() << '\n';
+		}
+
+		QList<Channel*>::const_iterator i = ch.qlChannels.constEnd();
+		while (i != ch.qlChannels.constBegin()) {
+			--i;
+			stack.push(Rec(depth, &**i));
+		}
+	}
 }
 
 void MainWindow::on_qaAudioMute_triggered() {

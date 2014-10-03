@@ -185,6 +185,8 @@
    <addaction name="qaConfigDialog"/>
    <addaction name="separator"/>
    <addaction name="qaFilterToggle"/>
+   <addaction name="separator"/>
+   <addaction name="qaLogUsersToggle"/>
   </widget>
   <action name="qaQuit">
    <property name="text">
@@ -560,6 +562,31 @@ the channel's context menu.</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="qaLogUsersToggle">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>skin:log.svg</normaloff>
+     <normalon>skin:log.svg</normalon>
+     <activeon>skin:log.svg</activeon>skin:log.svg</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Log users on/off</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle the continuous user log</string>
+   </property>
+   <property name="whatsThis">
+    <string>Enable or disable the logging of all users.
+Every few seconds, a file will be created listing all
+users in all channels on the server.</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>
