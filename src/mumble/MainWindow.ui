@@ -573,9 +573,9 @@ the channel's context menu.</string>
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>skin:log.svg</normaloff>
-     <normalon>skin:log.svg</normalon>
-     <activeon>skin:log.svg</activeon>skin:log.svg</iconset>
+     <normaloff>skin:log_users.svg</normaloff>
+     <normalon>skin:log_users_active.svg</normalon>
+     <activeon>skin:log_users_active.svg</activeon>skin:log_users.svg</iconset>
    </property>
    <property name="text">
     <string>&amp;Log users on/off</string>
@@ -585,7 +585,7 @@ the channel's context menu.</string>
    </property>
    <property name="whatsThis">
     <string>Enable or disable the logging of all users.
-Every few seconds, a file will be created listing all
+Every so oftten, a file will be created listing all
 users in all channels on the server.</string>
    </property>
    <property name="iconVisibleInMenu">
