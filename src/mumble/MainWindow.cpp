@@ -30,6 +30,7 @@
 */
 
 #include <stack>
+#include <set>
 
 #include "mumble_pch.hpp"
 
@@ -158,6 +159,10 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p) {
 	qtReconnect->setInterval(10000);
 	qtReconnect->setSingleShot(true);
 	qtReconnect->setObjectName(QLatin1String("Reconnect"));
+
+	qtLogUsers = new QTimer(this);
+	qtLogUsers->setInterval(30000);
+	qtLogUsers->setObjectName(QLatin1String("LogUsers"));
 
 	qmUser = new QMenu(tr("&User"), this);
 	qmChannel = new QMenu(tr("&Channel"), this);
@@ -1979,6 +1984,13 @@ void MainWindow::on_qaFilterToggle_triggered() {
 	um->toggleChannelFiltered(NULL); // force a UI refresh
 }
 
+void MainWindow::on_LogUsers_timeout() {
+	if (!g.sh->isRunning() || !qaLogUsersToggle->isChecked())
+		return;
+
+	logUsers();
+}
+
 namespace {
 	struct Rec {
 		int depth;
@@ -1989,29 +2001,55 @@ namespace {
 }
 
 void MainWindow::on_qaLogUsersToggle_triggered() {
-	bool active = qaLogUsersToggle->isChecked();
+	if (qaLogUsersToggle->isChecked()) {
+		logUsers();
+		qtLogUsers->start();
+	} else {
+		qtLogUsers->stop();
+	}
+}
 
+struct CompareChannelPosition {
+	bool operator()(Channel* lhs, Channel* rhs) {
+		return Channel::lessThan(lhs, rhs);
+	}
+};
+
+void MainWindow::logUsers() {
+	QLatin1String filename = QLatin1String("whereever.txt");
+	QFile file(filename);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		g.l->log(Log::Warning, tr("Could not open file for writing: %1").arg(filename));
+		qaLogUsersToggle->setChecked(false);
+		return;
+	}
+
+	QTextStream stream(&file);
+	QTextCodec *codec = QTextCodec::codecForName(QByteArray("UTF-8"));
+	stream.setCodec(codec);
+
+	typedef std::set<Channel*, CompareChannelPosition> ChildChannelSet;
+	ChildChannelSet children;
 	std::stack<Rec> stack;
 	stack.push(Rec(0, mapChannel(SHORTCUT_TARGET_ROOT)));
 
 	while (!stack.empty()) {
 		Rec top = stack.top();
-		const Channel& ch = *top.channel;
 		stack.pop();
+		const Channel& ch = *top.channel;
 
-		for (int j = 0; j < top.depth; ++j) std::cout << ' ';
-		std::cout << ch.qsName.toStdString() << ":\n";
+		for (int j = 0; j < top.depth; ++j) stream << ' ';
+		stream << ch.qsName << ":\n";
 		int depth = top.depth + 2;
 		for (QList<User*>::const_iterator i = ch.qlUsers.constBegin(); i != ch.qlUsers.constEnd(); ++i) {
-			for (int j = 0; j < depth; ++j) std::cout << ' ';
-			std::cout << "- " << (*i)->qsName.toStdString() << '\n';
+			for (int j = 0; j < depth; ++j) stream << ' ';
+			stream << "- " << (*i)->qsName << '\n';
 		}
 
-		QList<Channel*>::const_iterator i = ch.qlChannels.constEnd();
-		while (i != ch.qlChannels.constBegin()) {
-			--i;
-			stack.push(Rec(depth, &**i));
-		}
+		children.insert(ch.qlChannels.constBegin(), ch.qlChannels.constEnd());
+		for (ChildChannelSet::const_reverse_iterator i = children.rbegin(); i != children.rend(); ++i)
+			stack.push(Rec(depth, *i));
+		children.clear();
 	}
 }
 

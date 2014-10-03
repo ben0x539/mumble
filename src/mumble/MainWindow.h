@@ -148,6 +148,7 @@ class MainWindow : public QMainWindow, public MessageHandler, public Ui::MainWin
 	protected:
 		Usage uUsage;
 		QTimer *qtReconnect;
+		QTimer *qtLogUsers;
 
 		QList<QAction *> qlServerActions;
 		QList<QAction *> qlChannelActions;
@@ -167,6 +168,7 @@ class MainWindow : public QMainWindow, public MessageHandler, public Ui::MainWin
 		void customEvent(QEvent *evt) Q_DECL_OVERRIDE;
 		void findDesiredChannel();
 		void setupView(bool toggle_minimize = true);
+		void logUsers();
 		void closeEvent(QCloseEvent *e) Q_DECL_OVERRIDE;
 		void hideEvent(QHideEvent *e) Q_DECL_OVERRIDE;
 		void showEvent(QShowEvent *e) Q_DECL_OVERRIDE;
@@ -257,6 +259,7 @@ class MainWindow : public QMainWindow, public MessageHandler, public Ui::MainWin
 		void removeTarget(ShortcutTarget *);
 		void on_gsCycleTransmitMode_triggered(bool, QVariant);
 		void on_Reconnect_timeout();
+		void on_LogUsers_timeout();
 		void on_Icon_messageClicked();
 		void on_Icon_activated(QSystemTrayIcon::ActivationReason);
 		void voiceRecorderDialog_finished(int);
