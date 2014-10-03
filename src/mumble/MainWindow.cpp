@@ -2021,6 +2021,12 @@ void MainWindow::logUsers() {
 	const static QString logsPath = docsPath + QLatin1String("/mumble-user-logs");
 	const static QString filenamePattern = logsPath + QLatin1String("/mumble-user-log-%1.txt");
 	const static QDir docsDir = QDir(docsPath);
+
+	Channel* root = mapChannel(SHORTCUT_TARGET_ROOT);
+	if (!root) {
+		return;
+	}
+
 	if (!docsDir.mkpath(QLatin1String("mumble-user-logs"))) {
 		g.l->log(Log::Warning, tr("Could not create log directory in %1").arg(docsPath));
 		qaLogUsersToggle->setChecked(false);
@@ -2043,7 +2049,7 @@ void MainWindow::logUsers() {
 	typedef std::set<Channel*, CompareChannelPosition> ChildChannelSet;
 	ChildChannelSet children;
 	std::stack<Rec> stack;
-	stack.push(Rec(0, mapChannel(SHORTCUT_TARGET_ROOT)));
+	stack.push(Rec(0, root));
 
 	while (!stack.empty()) {
 		Rec top = stack.top();
