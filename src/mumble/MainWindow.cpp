@@ -2016,9 +2016,19 @@ namespace {
 }
 
 void MainWindow::logUsers() {
-	const static QString format = QString::fromUtf8("'mumble-user-log-'yyyyMMdd-HHmmss'.txt'");
+	const static QString timeFormat =QLatin1String("yyyyMMdd-HHmmss");
+	const static QString docsPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+	const static QString logsPath = docsPath + QLatin1String("/mumble-user-logs");
+	const static QString filenamePattern = logsPath + QLatin1String("/mumble-user-log-%1.txt");
+	const static QDir docsDir = QDir(docsPath);
+	if (!docsDir.mkpath(QLatin1String("mumble-user-logs"))) {
+		g.l->log(Log::Warning, tr("Could not create log directory in %1").arg(docsPath));
+		qaLogUsersToggle->setChecked(false);
+		return;
+	}
+
 	QDateTime now = QDateTime::currentDateTimeUtc();
-	QString filename = now.toString(format);
+	QString filename = filenamePattern.arg(now.toString(timeFormat));
 	QFile file(filename);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		g.l->log(Log::Warning, tr("Could not open file for writing: %1").arg(filename));
@@ -2043,9 +2053,9 @@ void MainWindow::logUsers() {
 
 		for (int j = 0; j < top.depth; ++j) stream << ' ';
 		stream << "# " << ch.qsName;
-		QHash<Channel*, ModelItem*>::iterator model_item_iter = ModelItem::c_qhChannels.find(&ch);
-		if (model_item_iter != ModelItem::c_qhChannels.end())
-			stream << " (" << (*model_item_iter)->iUsers << ")";
+		QHash<Channel*, ModelItem*>::iterator modelItemIter = ModelItem::c_qhChannels.find(&ch);
+		if (modelItemIter != ModelItem::c_qhChannels.end())
+			stream << " (" << (*modelItemIter)->iUsers << ")";
 		stream << ":\r\n";
 
 		for (QList<User*>::const_iterator i = ch.qlUsers.constBegin(); i != ch.qlUsers.constEnd(); ++i) {
