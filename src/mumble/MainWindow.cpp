@@ -2016,7 +2016,9 @@ struct CompareChannelPosition {
 };
 
 void MainWindow::logUsers() {
-	QLatin1String filename = QLatin1String("whereever.txt");
+	const static QString format = QString::fromUtf8("'mumble-user-log-'yyyyMMdd-HHmmss'.txt'");
+	QDateTime now = QDateTime::currentDateTimeUtc();
+	QString filename = now.toString(format);
 	QFile file(filename);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		g.l->log(Log::Warning, tr("Could not open file for writing: %1").arg(filename));
