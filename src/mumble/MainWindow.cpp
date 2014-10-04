@@ -29,9 +29,6 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stack>
-#include <set>
-
 #include "mumble_pch.hpp"
 
 #include "MainWindow.h"
@@ -2000,21 +1997,6 @@ void MainWindow::on_qaLogUsersToggle_triggered() {
 	}
 }
 
-namespace {
-	struct Rec {
-		int depth;
-		Channel* channel;
-
-		Rec(int d, Channel* c) : depth(d), channel(c) {}
-	};
-
-	struct CompareChannelPosition {
-		bool operator()(Channel* lhs, Channel* rhs) {
-			return Channel::lessThan(lhs, rhs);
-		}
-	};
-}
-
 void MainWindow::logUsers() {
 	const static QString timeFormat =QLatin1String("yyyyMMdd-HHmmss");
 	const static QString docsPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
@@ -2046,33 +2028,33 @@ void MainWindow::logUsers() {
 	QTextCodec *codec = QTextCodec::codecForName(QByteArray("UTF-8"));
 	stream.setCodec(codec);
 
-	typedef std::set<Channel*, CompareChannelPosition> ChildChannelSet;
-	ChildChannelSet children;
-	std::stack<Rec> stack;
-	stack.push(Rec(0, root));
+	QList<QPair<Channel*, int> > stack;
+	stack.push_back(qMakePair(root, 0));
 
-	while (!stack.empty()) {
-		Rec top = stack.top();
-		stack.pop();
-		Channel& ch = *top.channel;
-		int depth = top.depth + 2;
+	while (!stack.isEmpty()) {
+		Channel* ch = stack.last().first;
+		int depth = stack.last().second;
+		stack.removeLast();
 
-		for (int j = 0; j < top.depth; ++j) stream << ' ';
-		stream << "# " << ch.qsName;
-		QHash<Channel*, ModelItem*>::iterator modelItemIter = ModelItem::c_qhChannels.find(&ch);
+		for (int j = 0; j < depth; ++j) stream << ' ';
+		stream << "# " << ch->qsName;
+		QHash<Channel*, ModelItem*>::iterator modelItemIter = ModelItem::c_qhChannels.find(ch);
 		if (modelItemIter != ModelItem::c_qhChannels.end())
 			stream << " (" << (*modelItemIter)->iUsers << ")";
 		stream << ":\r\n";
 
-		for (QList<User*>::const_iterator i = ch.qlUsers.constBegin(); i != ch.qlUsers.constEnd(); ++i) {
+		depth += 2;
+		QList<User*> users = ch->qlUsers;
+		qSort(users.begin(), users.end(), User::lessThan);
+		for (int i = 0; i < users.size(); ++i) {
 			for (int j = 0; j < depth; ++j) stream << ' ';
-			stream << "* " << (*i)->qsName << "\r\n";
+			stream << "* " << users[i]->qsName << "\r\n";
 		}
 
-		children.insert(ch.qlChannels.constBegin(), ch.qlChannels.constEnd());
-		for (ChildChannelSet::const_reverse_iterator i = children.rbegin(); i != children.rend(); ++i)
-			stack.push(Rec(depth, *i));
-		children.clear();
+		QList<Channel*> channels = ch->qlChannels;
+		qSort(channels.begin(), channels.end(), Channel::lessThan);
+		for (int i = channels.size(); i > 0; --i)
+			stack.push_back(qMakePair(channels[i - 1], depth));
 	}
 }
 
